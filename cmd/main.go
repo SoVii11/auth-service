@@ -50,10 +50,11 @@ func main() {
 	appointmentRepo := repository.NewAppointmentRepository(db)
 	psychologistRepo := repository.NewPsychologistRepository(db)
 	messageRepo := repository.NewMessageRepository(db)
+	scheduleRepo := repository.NewScheduleRepository(db)
 
 	// Usecases
 	authUsecase := usecases.NewAuthUsecase(userRepo, resetCodeRepo, cfg)
-	appointmentUsecase := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	appointmentUsecase := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 
 	// Controllers
 	authController := controllers.NewAuthController(authUsecase, log)
@@ -73,6 +74,8 @@ func main() {
 	// Psychologist routes
 	r.Get("/psychologists", appointmentController.GetPsychologists)
 	r.Get("/psychologists/{id}", appointmentController.GetPsychologistByID)
+	r.Get("/psychologists/{id}/vacations", appointmentController.GetVacations)
+	r.Get("/psychologists/{id}/availability", appointmentController.CheckAvailability)
 
 	// Appointment routes
 	r.Post("/appointments", appointmentController.CreateAppointment)
@@ -82,6 +85,8 @@ func main() {
 	r.Get("/admin/appointments", appointmentController.GetAllAppointments)
 	r.Patch("/admin/appointments/{id}/approve", appointmentController.ApproveAppointment)
 	r.Patch("/admin/appointments/{id}/reject", appointmentController.RejectAppointment)
+	r.Post("/admin/psychologists/{id}/vacation", appointmentController.AddVacation)
+	r.Delete("/admin/psychologists/vacation/{id}", appointmentController.RemoveVacation)
 
 	// Chat WebSocket
 	r.Get("/ws/chat", chatController.HandleUserChat)

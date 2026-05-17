@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/SoVii11/auth-service/internal/usecases"
 	sharedJWT "github.com/SoVii11/shared/pkg/jwt"
@@ -244,4 +245,153 @@ func (c *AppointmentController) GetPsychologistByID(w http.ResponseWriter, r *ht
 	}
 
 	response.Success(w, p)
+}
+
+type vacationRequest struct {
+	DateFrom string `json:"date_from" example:"2026-06-01"`
+	DateTo   string `json:"date_to" example:"2026-06-10"`
+	Reason   string `json:"reason" example:"vacation"`
+}
+
+// AddVacation godoc
+// @Summary      Добавить выходной/отпуск психологу (админ)
+// @Description  Устанавливает период недоступности психолога
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string           true  "Bearer токен"
+// @Param        id             path      int              true  "ID психолога"
+// @Param        input          body      vacationRequest  true  "Период отпуска"
+// @Success      201            {object}  map[string]any
+// @Failure      400            {object}  map[string]string
+// @Failure      403            {object}  map[string]string
+// @Router       /admin/psychologists/{id}/vacation [post]
+func (c *AppointmentController) AddVacation(w http.ResponseWriter, r *http.Request) {
+	claims, err := c.getClaimsFromRequest(r)
+	if err != nil || claims.Role != "admin" {
+		response.Forbidden(w, "admins only")
+		return
+	}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, "invalid id")
+		return
+	}
+
+	var req vacationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.BadRequest(w, "invalid request body")
+		return
+	}
+
+	dateFrom, err := time.Parse("2006-01-02", req.DateFrom)
+	if err != nil {
+		response.BadRequest(w, "invalid date_from format, use YYYY-MM-DD")
+		return
+	}
+
+	dateTo, err := time.Parse("2006-01-02", req.DateTo)
+	if err != nil {
+		response.BadRequest(w, "invalid date_to format, use YYYY-MM-DD")
+		return
+	}
+
+	s, err := c.usecase.AddVacation(id, dateFrom, dateTo, req.Reason)
+	if err != nil {
+		c.log.Warn("add vacation failed", zap.Error(err))
+		response.BadRequest(w, err.Error())
+		return
+	}
+
+	response.Created(w, s)
+}
+
+// RemoveVacation godoc
+// @Summary      Удалить выходной/отпуск психолога (админ)
+// @Description  Удаляет период недоступности психолога
+// @Tags         admin
+// @Produce      json
+// @Param        Authorization  header  string  true  "Bearer токен"
+// @Param        id             path    int     true  "ID записи расписания"
+// @Success      200            {object}  map[string]string
+// @Failure      403            {object}  map[string]string
+// @Router       /admin/psychologists/vacation/{id} [delete]
+func (c *AppointmentController) RemoveVacation(w http.ResponseWriter, r *http.Request) {
+	claims, err := c.getClaimsFromRequest(r)
+	if err != nil || claims.Role != "admin" {
+		response.Forbidden(w, "admins only")
+		return
+	}
+
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, "invalid id")
+		return
+	}
+
+	if err := c.usecase.RemoveVacation(id); err != nil {
+		response.BadRequest(w, err.Error())
+		return
+	}
+
+	response.Success(w, map[string]string{"message": "vacation removed"})
+}
+
+// GetVacations godoc
+// @Summary      Расписание психолога
+// @Description  Возвращает список выходных и отпусков психолога
+// @Tags         psychologists
+// @Produce      json
+// @Param        id  path  int  true  "ID психолога"
+// @Success      200  {object}  map[string]any
+// @Failure      404  {object}  map[string]string
+// @Router       /psychologists/{id}/vacations [get]
+func (c *AppointmentController) GetVacations(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, "invalid id")
+		return
+	}
+
+	schedules, err := c.usecase.GetVacations(id)
+	if err != nil {
+		response.Internal(w, "failed to get vacations")
+		return
+	}
+
+	response.Success(w, schedules)
+}
+
+// CheckAvailability godoc
+// @Summary      Проверить доступность психолога
+// @Description  Проверяет доступен ли психолог на указанную дату
+// @Tags         psychologists
+// @Produce      json
+// @Param        id    path   int     true  "ID психолога"
+// @Param        date  query  string  true  "Дата в формате YYYY-MM-DD"
+// @Success      200   {object}  map[string]any
+// @Failure      400   {object}  map[string]string
+// @Router       /psychologists/{id}/availability [get]
+func (c *AppointmentController) CheckAvailability(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		response.BadRequest(w, "invalid id")
+		return
+	}
+
+	dateStr := r.URL.Query().Get("date")
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		response.BadRequest(w, "invalid date format, use YYYY-MM-DD")
+		return
+	}
+
+	available, err := c.usecase.IsPsychologistAvailable(id, date)
+	if err != nil {
+		response.Internal(w, "failed to check availability")
+		return
+	}
+
+	response.Success(w, map[string]bool{"available": available})
 }

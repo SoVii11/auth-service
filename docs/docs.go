@@ -295,6 +295,121 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/psychologists/vacation/{id}": {
+            "delete": {
+                "description": "Удаляет период недоступности психолога",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удалить выходной/отпуск психолога (админ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID записи расписания",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/psychologists/{id}/vacation": {
+            "post": {
+                "description": "Устанавливает период недоступности психолога",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Добавить выходной/отпуск психологу (админ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID психолога",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Период отпуска",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.vacationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appointments": {
             "post": {
                 "description": "Создаёт запись к психологу для авторизованного пользователя",
@@ -672,6 +787,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/psychologists/{id}/availability": {
+            "get": {
+                "description": "Проверяет доступен ли психолог на указанную дату",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "psychologists"
+                ],
+                "summary": "Проверить доступность психолога",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID психолога",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата в формате YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/psychologists/{id}/vacations": {
+            "get": {
+                "description": "Возвращает список выходных и отпусков психолога",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "psychologists"
+                ],
+                "summary": "Расписание психолога",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID психолога",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ws/admin/chat": {
             "get": {
                 "description": "Подключение администратора к чату через WebSocket",
@@ -774,6 +974,23 @@ const docTemplate = `{
                 "new_password": {
                     "type": "string",
                     "example": "newpassword123"
+                }
+            }
+        },
+        "controllers.vacationRequest": {
+            "type": "object",
+            "properties": {
+                "date_from": {
+                    "type": "string",
+                    "example": "2026-06-01"
+                },
+                "date_to": {
+                    "type": "string",
+                    "example": "2026-06-10"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "vacation"
                 }
             }
         }

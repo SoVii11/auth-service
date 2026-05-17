@@ -45,6 +45,18 @@ definitions:
         example: newpassword123
         type: string
     type: object
+  controllers.vacationRequest:
+    properties:
+      date_from:
+        example: "2026-06-01"
+        type: string
+      date_to:
+        example: "2026-06-10"
+        type: string
+      reason:
+        example: vacation
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -239,6 +251,83 @@ paths:
       summary: Список всех чатов (админ)
       tags:
       - chat
+  /admin/psychologists/{id}/vacation:
+    post:
+      consumes:
+      - application/json
+      description: Устанавливает период недоступности психолога
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Период отпуска
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.vacationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавить выходной/отпуск психологу (админ)
+      tags:
+      - admin
+  /admin/psychologists/vacation/{id}:
+    delete:
+      description: Удаляет период недоступности психолога
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID записи расписания
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить выходной/отпуск психолога (админ)
+      tags:
+      - admin
   /appointments:
     post:
       consumes:
@@ -486,6 +575,63 @@ paths:
               type: string
             type: object
       summary: Информация о психологе
+      tags:
+      - psychologists
+  /psychologists/{id}/availability:
+    get:
+      description: Проверяет доступен ли психолог на указанную дату
+      parameters:
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Дата в формате YYYY-MM-DD
+        in: query
+        name: date
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Проверить доступность психолога
+      tags:
+      - psychologists
+  /psychologists/{id}/vacations:
+    get:
+      description: Возвращает список выходных и отпусков психолога
+      parameters:
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Расписание психолога
       tags:
       - psychologists
   /ws/admin/chat:

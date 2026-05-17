@@ -1,6 +1,10 @@
 package usecases
 
-import "github.com/SoVii11/auth-service/internal/entities"
+import (
+	"time"
+
+	"github.com/SoVii11/auth-service/internal/entities"
+)
 
 type AppointmentRepo interface {
 	Create(a *entities.Appointment) error
@@ -13,4 +17,10 @@ type AppointmentRepo interface {
 type PsychologistRepo interface {
 	GetAll() ([]entities.Psychologist, error)
 	GetByID(id int64) (*entities.Psychologist, error)
+}
+type ScheduleRepo interface {
+	Create(s *entities.PsychologistSchedule) error
+	Delete(id int64) error
+	GetByPsychologistID(psychologistID int64) ([]entities.PsychologistSchedule, error)
+	IsAvailable(psychologistID int64, date time.Time) (bool, error)
 }

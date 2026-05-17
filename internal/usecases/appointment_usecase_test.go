@@ -22,7 +22,8 @@ func TestCreateAppointment_Success(t *testing.T) {
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
 	appointmentRepo.On("Create", mock.AnythingOfType("*entities.Appointment")).Return(nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	a, err := uc.CreateAppointment(1, 1, "Хочу на консультацию")
 
 	assert.NoError(t, err)
@@ -38,7 +39,8 @@ func TestCreateAppointment_PsychologistNotFound(t *testing.T) {
 
 	psychologistRepo.On("GetByID", int64(99)).Return(nil, errors.New("not found"))
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	a, err := uc.CreateAppointment(1, 99, "Комментарий")
 
 	assert.Error(t, err)
@@ -55,7 +57,8 @@ func TestCreateAppointment_DBError(t *testing.T) {
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
 	appointmentRepo.On("Create", mock.AnythingOfType("*entities.Appointment")).Return(errors.New("db error"))
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	a, err := uc.CreateAppointment(1, 1, "Комментарий")
 
 	assert.Error(t, err)
@@ -75,7 +78,8 @@ func TestGetMyAppointments_Success(t *testing.T) {
 	}
 	appointmentRepo.On("GetByUserID", int64(1)).Return(appointments, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetMyAppointments(1)
 
 	assert.NoError(t, err)
@@ -89,7 +93,8 @@ func TestGetMyAppointments_Empty(t *testing.T) {
 
 	appointmentRepo.On("GetByUserID", int64(1)).Return([]entities.Appointment{}, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetMyAppointments(1)
 
 	assert.NoError(t, err)
@@ -110,7 +115,8 @@ func TestGetAllAppointments_Success(t *testing.T) {
 	}
 	appointmentRepo.On("GetAll").Return(appointments, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetAllAppointments()
 
 	assert.NoError(t, err)
@@ -128,7 +134,8 @@ func TestApproveAppointment_Success(t *testing.T) {
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 	appointmentRepo.On("UpdateStatus", int64(1), "approved").Return(nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.ApproveAppointment(1)
 
 	assert.NoError(t, err)
@@ -141,7 +148,8 @@ func TestApproveAppointment_NotFound(t *testing.T) {
 
 	appointmentRepo.On("GetByID", int64(99)).Return(nil, errors.New("not found"))
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.ApproveAppointment(99)
 
 	assert.Error(t, err)
@@ -156,7 +164,8 @@ func TestApproveAppointment_AlreadyApproved(t *testing.T) {
 	appointment := &entities.Appointment{ID: 1, Status: "approved"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.ApproveAppointment(1)
 
 	assert.Error(t, err)
@@ -174,7 +183,8 @@ func TestRejectAppointment_Success(t *testing.T) {
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 	appointmentRepo.On("UpdateStatus", int64(1), "rejected").Return(nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.RejectAppointment(1)
 
 	assert.NoError(t, err)
@@ -187,7 +197,8 @@ func TestRejectAppointment_NotFound(t *testing.T) {
 
 	appointmentRepo.On("GetByID", int64(99)).Return(nil, errors.New("not found"))
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.RejectAppointment(99)
 
 	assert.Error(t, err)
@@ -202,7 +213,8 @@ func TestRejectAppointment_AlreadyRejected(t *testing.T) {
 	appointment := &entities.Appointment{ID: 1, Status: "rejected"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	err := uc.RejectAppointment(1)
 
 	assert.Error(t, err)
@@ -222,7 +234,8 @@ func TestGetPsychologists_Success(t *testing.T) {
 	}
 	psychologistRepo.On("GetAll").Return(psychologists, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetPsychologists()
 
 	assert.NoError(t, err)
@@ -239,7 +252,8 @@ func TestGetPsychologistByID_Success(t *testing.T) {
 	psychologist := &entities.Psychologist{ID: 1, Name: "Анна Иванова"}
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetPsychologistByID(1)
 
 	assert.NoError(t, err)
@@ -253,7 +267,8 @@ func TestGetPsychologistByID_NotFound(t *testing.T) {
 
 	psychologistRepo.On("GetByID", int64(99)).Return(nil, errors.New("not found"))
 
-	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
 	result, err := uc.GetPsychologistByID(99)
 
 	assert.Error(t, err)

@@ -41,3 +41,11 @@ type Message struct {
 	IsAdmin   bool
 	CreatedAt time.Time
 }
+type PsychologistSchedule struct {
+	ID             int64
+	PsychologistID int64
+	DateFrom       time.Time
+	DateTo         time.Time
+	Reason         string
+	CreatedAt      time.Time
+}
