@@ -49,6 +49,7 @@ func main() {
 	resetCodeRepo := repository.NewResetCodeRepository(db)
 	appointmentRepo := repository.NewAppointmentRepository(db)
 	psychologistRepo := repository.NewPsychologistRepository(db)
+	messageRepo := repository.NewMessageRepository(db)
 
 	// Usecases
 	authUsecase := usecases.NewAuthUsecase(userRepo, resetCodeRepo, cfg)
@@ -57,6 +58,7 @@ func main() {
 	// Controllers
 	authController := controllers.NewAuthController(authUsecase, log)
 	appointmentController := controllers.NewAppointmentController(appointmentUsecase, log, cfg.JWTSecret)
+	chatController := controllers.NewChatController(messageRepo, log, cfg.JWTSecret)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -80,6 +82,16 @@ func main() {
 	r.Get("/admin/appointments", appointmentController.GetAllAppointments)
 	r.Patch("/admin/appointments/{id}/approve", appointmentController.ApproveAppointment)
 	r.Patch("/admin/appointments/{id}/reject", appointmentController.RejectAppointment)
+
+	// Chat WebSocket
+	r.Get("/ws/chat", chatController.HandleUserChat)
+	r.Get("/ws/admin/chat", chatController.HandleAdminChat)
+
+	// Chat REST
+	r.Get("/chat/history", chatController.GetMyChat)
+	r.Get("/admin/chats", chatController.GetAllChats)
+	r.Get("/admin/chat/{id}", chatController.GetChatHistory)
+	r.Get("/admin/chat/{id}/export", chatController.ExportChatJSON)
 
 	// Swagger
 	r.Get("/swagger/*", httpSwagger.WrapHandler)

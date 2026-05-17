@@ -177,6 +177,124 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/chat/{id}": {
+            "get": {
+                "description": "Возвращает историю сообщений конкретного пользователя",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "История чата пользователя (админ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/chat/{id}/export": {
+            "get": {
+                "description": "Возвращает историю чата пользователя в формате JSON файла",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Экспорт чата в JSON (админ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/chats": {
+            "get": {
+                "description": "Возвращает последнее сообщение от каждого пользователя",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Список всех чатов (админ)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/appointments": {
             "post": {
                 "description": "Создаёт запись к психологу для авторизованного пользователя",
@@ -458,6 +576,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/chat/history": {
+            "get": {
+                "description": "Возвращает историю сообщений авторизованного пользователя",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "История моего чата",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/psychologists": {
             "get": {
                 "description": "Возвращает список всех психологов",
@@ -516,6 +670,44 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/ws/admin/chat": {
+            "get": {
+                "description": "Подключение администратора к чату через WebSocket",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "WebSocket чат администратора",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT токен администратора",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/ws/chat": {
+            "get": {
+                "description": "Подключение пользователя к чату с администратором через WebSocket",
+                "tags": [
+                    "chat"
+                ],
+                "summary": "WebSocket чат пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "JWT токен",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
             }
         }
     },

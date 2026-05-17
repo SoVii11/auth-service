@@ -160,6 +160,85 @@ paths:
       summary: Отклонить запись (админ)
       tags:
       - admin
+  /admin/chat/{id}:
+    get:
+      description: Возвращает историю сообщений конкретного пользователя
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: История чата пользователя (админ)
+      tags:
+      - chat
+  /admin/chat/{id}/export:
+    get:
+      description: Возвращает историю чата пользователя в формате JSON файла
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Экспорт чата в JSON (админ)
+      tags:
+      - chat
+  /admin/chats:
+    get:
+      description: Возвращает последнее сообщение от каждого пользователя
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Список всех чатов (админ)
+      tags:
+      - chat
   /appointments:
     post:
       consumes:
@@ -345,6 +424,30 @@ paths:
       summary: Отправка кода восстановления
       tags:
       - auth
+  /chat/history:
+    get:
+      description: Возвращает историю сообщений авторизованного пользователя
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: История моего чата
+      tags:
+      - chat
   /psychologists:
     get:
       description: Возвращает список всех психологов
@@ -385,4 +488,30 @@ paths:
       summary: Информация о психологе
       tags:
       - psychologists
+  /ws/admin/chat:
+    get:
+      description: Подключение администратора к чату через WebSocket
+      parameters:
+      - description: JWT токен администратора
+        in: query
+        name: token
+        required: true
+        type: string
+      responses: {}
+      summary: WebSocket чат администратора
+      tags:
+      - chat
+  /ws/chat:
+    get:
+      description: Подключение пользователя к чату с администратором через WebSocket
+      parameters:
+      - description: JWT токен
+        in: query
+        name: token
+        required: true
+        type: string
+      responses: {}
+      summary: WebSocket чат пользователя
+      tags:
+      - chat
 swagger: "2.0"
