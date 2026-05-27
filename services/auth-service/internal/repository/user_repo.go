@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/SoVii11/auth-service/services/auth-service/internal/domain"
@@ -25,6 +26,9 @@ func (r *UserRepository) FindByEmail(email string) (*domain.User, error) {
 	user := &domain.User{}
 	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Role, &user.CreatedAt)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
 		return nil, err
 	}
 	return user, nil

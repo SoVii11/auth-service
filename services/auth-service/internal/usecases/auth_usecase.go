@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"crypto/rand"
-	"database/sql"
+
 	"errors"
 	"fmt"
 	"math/big"
@@ -47,7 +47,7 @@ func (u *AuthUsecase) Register(email, password string) (*domain.User, error) {
 func (u *AuthUsecase) Login(email, password string) (string, error) {
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, domain.ErrNotFound) {
 			return "", errors.New("invalid email or password")
 		}
 		return "", err
@@ -63,7 +63,7 @@ func (u *AuthUsecase) Login(email, password string) (string, error) {
 func (u *AuthUsecase) SendResetCode(email string) error {
 	user, err := u.userRepo.FindByEmail(email)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, domain.ErrNotFound) {
 			return errors.New("user not found")
 		}
 		return err
