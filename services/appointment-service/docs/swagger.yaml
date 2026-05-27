@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  controllers.createAppointmentRequest:
+  handler.createAppointmentRequest:
     properties:
       comment:
         example: Хочу записаться на консультацию
@@ -9,7 +9,7 @@ definitions:
         example: 1
         type: integer
     type: object
-  controllers.loginRequest:
+  handler.loginRequest:
     properties:
       email:
         example: user@example.com
@@ -18,7 +18,7 @@ definitions:
         example: password123
         type: string
     type: object
-  controllers.registerRequest:
+  handler.registerRequest:
     properties:
       email:
         example: user@example.com
@@ -27,13 +27,13 @@ definitions:
         example: password123
         type: string
     type: object
-  controllers.resetCodeRequest:
+  handler.resetCodeRequest:
     properties:
       email:
         example: user@example.com
         type: string
     type: object
-  controllers.resetPasswordRequest:
+  handler.resetPasswordRequest:
     properties:
       code:
         example: "123456"
@@ -45,7 +45,7 @@ definitions:
         example: newpassword123
         type: string
     type: object
-  controllers.vacationRequest:
+  handler.vacationRequest:
     properties:
       date_from:
         example: "2026-06-01"
@@ -57,16 +57,15 @@ definitions:
         example: vacation
         type: string
     type: object
-host: localhost:8080
+host: localhost:8081
 info:
   contact: {}
-  description: Сервис авторизации для психологической платформы
-  title: Auth Service API
+  description: Сервис записи к психологу
+  title: Appointment Service API
   version: "1.0"
 paths:
   /admin/appointments:
     get:
-      description: Возвращает все записи — только для администратора
       parameters:
       - description: Bearer токен
         in: header
@@ -81,24 +80,11 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Все записи (админ)
       tags:
       - admin
   /admin/appointments/{id}/approve:
     patch:
-      description: Меняет статус записи на approved
       parameters:
       - description: Bearer токен
         in: header
@@ -110,23 +96,9 @@ paths:
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -136,7 +108,6 @@ paths:
       - admin
   /admin/appointments/{id}/reject:
     patch:
-      description: Меняет статус записи на rejected
       parameters:
       - description: Bearer токен
         in: header
@@ -148,23 +119,9 @@ paths:
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Forbidden
           schema:
             additionalProperties:
               type: string
@@ -172,90 +129,10 @@ paths:
       summary: Отклонить запись (админ)
       tags:
       - admin
-  /admin/chat/{id}:
-    get:
-      description: Возвращает историю сообщений конкретного пользователя
-      parameters:
-      - description: Bearer токен
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: ID пользователя
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: История чата пользователя (админ)
-      tags:
-      - chat
-  /admin/chat/{id}/export:
-    get:
-      description: Возвращает историю чата пользователя в формате JSON файла
-      parameters:
-      - description: Bearer токен
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: ID пользователя
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: OK
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Экспорт чата в JSON (админ)
-      tags:
-      - chat
-  /admin/chats:
-    get:
-      description: Возвращает последнее сообщение от каждого пользователя
-      parameters:
-      - description: Bearer токен
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Список всех чатов (админ)
-      tags:
-      - chat
   /admin/psychologists/{id}/vacation:
     post:
       consumes:
       - application/json
-      description: Устанавливает период недоступности психолога
       parameters:
       - description: Bearer токен
         in: header
@@ -272,33 +149,18 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.vacationRequest'
-      produces:
-      - application/json
+          $ref: '#/definitions/handler.vacationRequest'
       responses:
         "201":
           description: Created
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Добавить выходной/отпуск психологу (админ)
+      summary: Добавить отпуск психологу (админ)
       tags:
       - admin
   /admin/psychologists/vacation/{id}:
     delete:
-      description: Удаляет период недоступности психолога
       parameters:
       - description: Bearer токен
         in: header
@@ -310,8 +172,6 @@ paths:
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
@@ -319,20 +179,13 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Удалить выходной/отпуск психолога (админ)
+      summary: Удалить отпуск психолога (админ)
       tags:
       - admin
   /appointments:
     post:
       consumes:
       - application/json
-      description: Создаёт запись к психологу для авторизованного пользователя
       parameters:
       - description: Bearer токен
         in: header
@@ -344,7 +197,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.createAppointmentRequest'
+          $ref: '#/definitions/handler.createAppointmentRequest'
       produces:
       - application/json
       responses:
@@ -359,18 +212,11 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Записаться к психологу
       tags:
       - appointments
   /appointments/my:
     get:
-      description: Возвращает список записей авторизованного пользователя
       parameters:
       - description: Bearer токен
         in: header
@@ -384,12 +230,6 @@ paths:
           description: OK
           schema:
             additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
             type: object
       summary: Мои записи
       tags:
@@ -405,7 +245,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.loginRequest'
+          $ref: '#/definitions/handler.loginRequest'
       produces:
       - application/json
       responses:
@@ -435,7 +275,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.registerRequest'
+          $ref: '#/definitions/handler.registerRequest'
       produces:
       - application/json
       responses:
@@ -464,7 +304,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.resetPasswordRequest'
+          $ref: '#/definitions/handler.resetPasswordRequest'
       produces:
       - application/json
       responses:
@@ -494,7 +334,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/controllers.resetCodeRequest'
+          $ref: '#/definitions/handler.resetCodeRequest'
       produces:
       - application/json
       responses:
@@ -513,33 +353,8 @@ paths:
       summary: Отправка кода восстановления
       tags:
       - auth
-  /chat/history:
-    get:
-      description: Возвращает историю сообщений авторизованного пользователя
-      parameters:
-      - description: Bearer токен
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: История моего чата
-      tags:
-      - chat
   /psychologists:
     get:
-      description: Возвращает список всех психологов
       produces:
       - application/json
       responses:
@@ -553,33 +368,23 @@ paths:
       - psychologists
   /psychologists/{id}:
     get:
-      description: Возвращает информацию о конкретном психологе
       parameters:
       - description: ID психолога
         in: path
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Информация о психологе
       tags:
       - psychologists
   /psychologists/{id}/availability:
     get:
-      description: Проверяет доступен ли психолог на указанную дату
       parameters:
       - description: ID психолога
         in: path
@@ -591,73 +396,30 @@ paths:
         name: date
         required: true
         type: string
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
             additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
             type: object
       summary: Проверить доступность психолога
       tags:
       - psychologists
   /psychologists/{id}/vacations:
     get:
-      description: Возвращает список выходных и отпусков психолога
       parameters:
       - description: ID психолога
         in: path
         name: id
         required: true
         type: integer
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       summary: Расписание психолога
       tags:
       - psychologists
-  /ws/admin/chat:
-    get:
-      description: Подключение администратора к чату через WebSocket
-      parameters:
-      - description: JWT токен администратора
-        in: query
-        name: token
-        required: true
-        type: string
-      responses: {}
-      summary: WebSocket чат администратора
-      tags:
-      - chat
-  /ws/chat:
-    get:
-      description: Подключение пользователя к чату с администратором через WebSocket
-      parameters:
-      - description: JWT токен
-        in: query
-        name: token
-        required: true
-        type: string
-      responses: {}
-      summary: WebSocket чат пользователя
-      tags:
-      - chat
 swagger: "2.0"

@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/SoVii11/auth-service/internal/infrastructure/postgres"
+	_ "github.com/SoVii11/auth-service/services/appointment-service/docs"
 	"github.com/SoVii11/auth-service/services/appointment-service/internal/config"
 	handler "github.com/SoVii11/auth-service/services/appointment-service/internal/delivery/http"
 	wshandler "github.com/SoVii11/auth-service/services/appointment-service/internal/delivery/ws"

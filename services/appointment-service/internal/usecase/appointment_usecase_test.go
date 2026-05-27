@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/SoVii11/auth-service/internal/entities"
+	"github.com/SoVii11/auth-service/services/appointment-service/internal/domain"
 	usecases "github.com/SoVii11/auth-service/services/appointment-service/internal/usecase"
 )
 
@@ -18,9 +18,9 @@ func TestCreateAppointment_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	psychologist := &entities.Psychologist{ID: 1, Name: "Анна Иванова"}
+	psychologist := &domain.Psychologist{ID: 1, Name: "Анна Иванова"}
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
-	appointmentRepo.On("Create", mock.AnythingOfType("*entities.Appointment")).Return(nil)
+	appointmentRepo.On("Create", mock.AnythingOfType("*domain.Appointment")).Return(nil)
 
 	scheduleRepo := new(usecases.MockScheduleRepository)
 	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
@@ -53,7 +53,7 @@ func TestCreateAppointment_DBError(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	psychologist := &entities.Psychologist{ID: 1, Name: "Анна Иванова"}
+	psychologist := &domain.Psychologist{ID: 1, Name: "Анна Иванова"}
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
 	appointmentRepo.On("Create", mock.AnythingOfType("*entities.Appointment")).Return(errors.New("db error"))
 
@@ -72,7 +72,7 @@ func TestGetMyAppointments_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointments := []entities.Appointment{
+	appointments := []domain.Appointment{
 		{ID: 1, UserID: 1, PsychologistID: 1, Status: "pending"},
 		{ID: 2, UserID: 1, PsychologistID: 1, Status: "approved"},
 	}
@@ -91,7 +91,7 @@ func TestGetMyAppointments_Empty(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointmentRepo.On("GetByUserID", int64(1)).Return([]entities.Appointment{}, nil)
+	appointmentRepo.On("GetByUserID", int64(1)).Return([]domain.Appointment{}, nil)
 
 	scheduleRepo := new(usecases.MockScheduleRepository)
 	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
@@ -108,7 +108,7 @@ func TestGetAllAppointments_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointments := []entities.Appointment{
+	appointments := []domain.Appointment{
 		{ID: 1, UserID: 1, Status: "pending"},
 		{ID: 2, UserID: 2, Status: "approved"},
 		{ID: 3, UserID: 3, Status: "rejected"},
@@ -130,7 +130,7 @@ func TestApproveAppointment_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointment := &entities.Appointment{ID: 1, UserID: 1, Status: "pending"}
+	appointment := &domain.Appointment{ID: 1, UserID: 1, Status: "pending"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 	appointmentRepo.On("UpdateStatus", int64(1), "approved").Return(nil)
 
@@ -161,7 +161,7 @@ func TestApproveAppointment_AlreadyApproved(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointment := &entities.Appointment{ID: 1, Status: "approved"}
+	appointment := &domain.Appointment{ID: 1, Status: "approved"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 
 	scheduleRepo := new(usecases.MockScheduleRepository)
@@ -179,7 +179,7 @@ func TestRejectAppointment_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointment := &entities.Appointment{ID: 1, Status: "pending"}
+	appointment := &domain.Appointment{ID: 1, Status: "pending"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 	appointmentRepo.On("UpdateStatus", int64(1), "rejected").Return(nil)
 
@@ -210,7 +210,7 @@ func TestRejectAppointment_AlreadyRejected(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	appointment := &entities.Appointment{ID: 1, Status: "rejected"}
+	appointment := &domain.Appointment{ID: 1, Status: "rejected"}
 	appointmentRepo.On("GetByID", int64(1)).Return(appointment, nil)
 
 	scheduleRepo := new(usecases.MockScheduleRepository)
@@ -228,7 +228,7 @@ func TestGetPsychologists_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	psychologists := []entities.Psychologist{
+	psychologists := []domain.Psychologist{
 		{ID: 1, Name: "Анна Иванова", CreatedAt: time.Now()},
 		{ID: 2, Name: "Иван Петров", CreatedAt: time.Now()},
 	}
@@ -249,7 +249,7 @@ func TestGetPsychologistByID_Success(t *testing.T) {
 	appointmentRepo := new(usecases.MockAppointmentRepository)
 	psychologistRepo := new(usecases.MockPsychologistRepository)
 
-	psychologist := &entities.Psychologist{ID: 1, Name: "Анна Иванова"}
+	psychologist := &domain.Psychologist{ID: 1, Name: "Анна Иванова"}
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
 
 	scheduleRepo := new(usecases.MockScheduleRepository)

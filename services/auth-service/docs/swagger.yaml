@@ -1,0 +1,425 @@
+basePath: /
+definitions:
+  handler.createAppointmentRequest:
+    properties:
+      comment:
+        example: Хочу записаться на консультацию
+        type: string
+      psychologist_id:
+        example: 1
+        type: integer
+    type: object
+  handler.loginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  handler.registerRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  handler.resetCodeRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    type: object
+  handler.resetPasswordRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      new_password:
+        example: newpassword123
+        type: string
+    type: object
+  handler.vacationRequest:
+    properties:
+      date_from:
+        example: "2026-06-01"
+        type: string
+      date_to:
+        example: "2026-06-10"
+        type: string
+      reason:
+        example: vacation
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: Сервис записи к психологу
+  title: Appointment Service API
+  version: "1.0"
+paths:
+  /admin/appointments:
+    get:
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Все записи (админ)
+      tags:
+      - admin
+  /admin/appointments/{id}/approve:
+    patch:
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID записи
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Принять запись (админ)
+      tags:
+      - admin
+  /admin/appointments/{id}/reject:
+    patch:
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID записи
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Отклонить запись (админ)
+      tags:
+      - admin
+  /admin/psychologists/{id}/vacation:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Период отпуска
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.vacationRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Добавить отпуск психологу (админ)
+      tags:
+      - admin
+  /admin/psychologists/vacation/{id}:
+    delete:
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID записи расписания
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить отпуск психолога (админ)
+      tags:
+      - admin
+  /appointments:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Данные записи
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createAppointmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Записаться к психологу
+      tags:
+      - appointments
+  /appointments/my:
+    get:
+      parameters:
+      - description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Мои записи
+      tags:
+      - appointments
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает JWT токен при успешной авторизации
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Вход в аккаунт
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового пользователя по email и паролю
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация пользователя
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Сбрасывает пароль пользователя по коду из email
+      parameters:
+      - description: Данные для сброса пароля
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.resetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Сброс пароля
+      tags:
+      - auth
+  /auth/send-reset-code:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет 6-значный код на email для сброса пароля
+      parameters:
+      - description: Email пользователя
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handler.resetCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Отправка кода восстановления
+      tags:
+      - auth
+  /psychologists:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Список психологов
+      tags:
+      - psychologists
+  /psychologists/{id}:
+    get:
+      parameters:
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Информация о психологе
+      tags:
+      - psychologists
+  /psychologists/{id}/availability:
+    get:
+      parameters:
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Дата в формате YYYY-MM-DD
+        in: query
+        name: date
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Проверить доступность психолога
+      tags:
+      - psychologists
+  /psychologists/{id}/vacations:
+    get:
+      parameters:
+      - description: ID психолога
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Расписание психолога
+      tags:
+      - psychologists
+swagger: "2.0"
