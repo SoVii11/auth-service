@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 
 	"github.com/SoVii11/auth-service/internal/infrastructure/postgres"
-	_ "github.com/SoVii11/auth-service/services/appointment-service/docs"
 	"github.com/SoVii11/auth-service/services/appointment-service/internal/config"
 	handler "github.com/SoVii11/auth-service/services/appointment-service/internal/delivery/http"
 	wshandler "github.com/SoVii11/auth-service/services/appointment-service/internal/delivery/ws"
@@ -58,6 +58,35 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
+
+	r.Route("/api", func(r chi.Router) {
+		r.Get("/psychologists", appointmentHandler.GetPsychologists)
+		r.Get("/psychologists/{id}", appointmentHandler.GetPsychologistByID)
+		r.Get("/psychologists/{id}/vacations", appointmentHandler.GetVacations)
+		r.Get("/psychologists/{id}/availability", appointmentHandler.CheckAvailability)
+
+		r.Post("/appointments", appointmentHandler.CreateAppointment)
+		r.Get("/appointments/my", appointmentHandler.GetMyAppointments)
+
+		r.Get("/admin/appointments", appointmentHandler.GetAllAppointments)
+		r.Patch("/admin/appointments/{id}/approve", appointmentHandler.ApproveAppointment)
+		r.Patch("/admin/appointments/{id}/reject", appointmentHandler.RejectAppointment)
+		r.Post("/admin/psychologists/{id}/vacation", appointmentHandler.AddVacation)
+		r.Delete("/admin/psychologists/vacation/{id}", appointmentHandler.RemoveVacation)
+
+		r.Get("/ws/chat", chatHandler.HandleUserChat)
+		r.Get("/ws/admin/chat", chatHandler.HandleAdminChat)
+		r.Get("/chat/history", chatHandler.GetMyChat)
+		r.Get("/admin/chats", chatHandler.GetAllChats)
+		r.Get("/admin/chat/{id}", chatHandler.GetChatHistory)
+		r.Get("/admin/chat/{id}/export", chatHandler.ExportChatJSON)
+	})
 
 	r.Get("/psychologists", appointmentHandler.GetPsychologists)
 	r.Get("/psychologists/{id}", appointmentHandler.GetPsychologistByID)

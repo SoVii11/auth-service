@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 
 	"github.com/SoVii11/auth-service/internal/infrastructure/postgres"
-	_ "github.com/SoVii11/auth-service/services/auth-service/docs"
 	"github.com/SoVii11/auth-service/services/auth-service/internal/config"
 	handler "github.com/SoVii11/auth-service/services/auth-service/internal/delivery/http"
 	"github.com/SoVii11/auth-service/services/auth-service/internal/repository"
@@ -53,6 +53,12 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
 
 	r.Post("/auth/register", authHandler.Register)
 	r.Post("/auth/login", authHandler.Login)

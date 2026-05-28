@@ -18,11 +18,21 @@ func (m *MockAppointmentRepository) Create(a *domain.Appointment) error {
 
 func (m *MockAppointmentRepository) GetAll() ([]domain.Appointment, error) {
 	args := m.Called()
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
 	return args.Get(0).([]domain.Appointment), args.Error(1)
 }
 
 func (m *MockAppointmentRepository) GetByUserID(userID int64) ([]domain.Appointment, error) {
 	args := m.Called(userID)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
 	return args.Get(0).([]domain.Appointment), args.Error(1)
 }
 
@@ -45,6 +55,11 @@ type MockPsychologistRepository struct {
 
 func (m *MockPsychologistRepository) GetAll() ([]domain.Psychologist, error) {
 	args := m.Called()
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
 	return args.Get(0).([]domain.Psychologist), args.Error(1)
 }
 
@@ -72,6 +87,11 @@ func (m *MockScheduleRepository) Delete(id int64) error {
 
 func (m *MockScheduleRepository) GetByPsychologistID(psychologistID int64) ([]domain.PsychologistSchedule, error) {
 	args := m.Called(psychologistID)
+
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+
 	return args.Get(0).([]domain.PsychologistSchedule), args.Error(1)
 }
 

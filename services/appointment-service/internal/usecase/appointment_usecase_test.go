@@ -55,7 +55,7 @@ func TestCreateAppointment_DBError(t *testing.T) {
 
 	psychologist := &domain.Psychologist{ID: 1, Name: "Анна Иванова"}
 	psychologistRepo.On("GetByID", int64(1)).Return(psychologist, nil)
-	appointmentRepo.On("Create", mock.AnythingOfType("*entities.Appointment")).Return(errors.New("db error"))
+	appointmentRepo.On("Create", mock.AnythingOfType("*domain.Appointment")).Return(errors.New("db error"))
 
 	scheduleRepo := new(usecases.MockScheduleRepository)
 	uc := usecases.NewAppointmentUsecase(appointmentRepo, psychologistRepo, scheduleRepo)
@@ -274,5 +274,137 @@ func TestGetPsychologistByID_NotFound(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, "psychologist not found", err.Error())
+	psychologistRepo.AssertExpectations(t)
+}
+func TestGetMyAppointments_DBError(t *testing.T) {
+	appointmentRepo := new(usecases.MockAppointmentRepository)
+	psychologistRepo := new(usecases.MockPsychologistRepository)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+
+	appointmentRepo.
+		On("GetByUserID", int64(1)).
+		Return(nil, errors.New("db error"))
+
+	uc := usecases.NewAppointmentUsecase(
+		appointmentRepo,
+		psychologistRepo,
+		scheduleRepo,
+	)
+
+	result, err := uc.GetMyAppointments(1)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	appointmentRepo.AssertExpectations(t)
+}
+
+func TestGetAllAppointments_DBError(t *testing.T) {
+	appointmentRepo := new(usecases.MockAppointmentRepository)
+	psychologistRepo := new(usecases.MockPsychologistRepository)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+
+	appointmentRepo.
+		On("GetAll").
+		Return(nil, errors.New("db error"))
+
+	uc := usecases.NewAppointmentUsecase(
+		appointmentRepo,
+		psychologistRepo,
+		scheduleRepo,
+	)
+
+	result, err := uc.GetAllAppointments()
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
+	appointmentRepo.AssertExpectations(t)
+}
+
+func TestApproveAppointment_UpdateStatusError(t *testing.T) {
+	appointmentRepo := new(usecases.MockAppointmentRepository)
+	psychologistRepo := new(usecases.MockPsychologistRepository)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+
+	appointment := &domain.Appointment{
+		ID:     1,
+		Status: "pending",
+	}
+
+	appointmentRepo.
+		On("GetByID", int64(1)).
+		Return(appointment, nil)
+
+	appointmentRepo.
+		On("UpdateStatus", int64(1), "approved").
+		Return(errors.New("update error"))
+
+	uc := usecases.NewAppointmentUsecase(
+		appointmentRepo,
+		psychologistRepo,
+		scheduleRepo,
+	)
+
+	err := uc.ApproveAppointment(1)
+
+	assert.Error(t, err)
+	assert.Equal(t, "update error", err.Error())
+
+	appointmentRepo.AssertExpectations(t)
+}
+
+func TestRejectAppointment_UpdateStatusError(t *testing.T) {
+	appointmentRepo := new(usecases.MockAppointmentRepository)
+	psychologistRepo := new(usecases.MockPsychologistRepository)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+
+	appointment := &domain.Appointment{
+		ID:     1,
+		Status: "pending",
+	}
+
+	appointmentRepo.
+		On("GetByID", int64(1)).
+		Return(appointment, nil)
+
+	appointmentRepo.
+		On("UpdateStatus", int64(1), "rejected").
+		Return(errors.New("update error"))
+
+	uc := usecases.NewAppointmentUsecase(
+		appointmentRepo,
+		psychologistRepo,
+		scheduleRepo,
+	)
+
+	err := uc.RejectAppointment(1)
+
+	assert.Error(t, err)
+	assert.Equal(t, "update error", err.Error())
+
+	appointmentRepo.AssertExpectations(t)
+}
+
+func TestGetPsychologists_DBError(t *testing.T) {
+	appointmentRepo := new(usecases.MockAppointmentRepository)
+	psychologistRepo := new(usecases.MockPsychologistRepository)
+	scheduleRepo := new(usecases.MockScheduleRepository)
+
+	psychologistRepo.
+		On("GetAll").
+		Return(nil, errors.New("db error"))
+
+	uc := usecases.NewAppointmentUsecase(
+		appointmentRepo,
+		psychologistRepo,
+		scheduleRepo,
+	)
+
+	result, err := uc.GetPsychologists()
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+
 	psychologistRepo.AssertExpectations(t)
 }

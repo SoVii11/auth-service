@@ -160,3 +160,273 @@ func TestResetPassword_UserNotFound(t *testing.T) {
 	assert.Equal(t, "user not found", err.Error())
 	userRepo.AssertExpectations(t)
 }
+func TestResetPassword_UpdatePasswordError(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	user := &domain.User{
+		ID:    1,
+		Email: "test@test.com",
+	}
+
+	resetCode := &domain.ResetCode{
+		ID:        1,
+		UserID:    1,
+		Code:      "123456",
+		ExpiresAt: time.Now().Add(10 * time.Minute),
+	}
+
+	userRepo.On("FindByEmail", "test@test.com").Return(user, nil)
+	resetRepo.On("FindByUserIDAndCode", int64(1), "123456").Return(resetCode, nil)
+
+	userRepo.On(
+		"UpdatePassword",
+		int64(1),
+		mock.AnythingOfType("string"),
+	).Return(errors.New("update error"))
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	err := uc.ResetPassword("test@test.com", "123456", "newpassword")
+
+	assert.Error(t, err)
+	assert.Equal(t, "update error", err.Error())
+
+	userRepo.AssertExpectations(t)
+	resetRepo.AssertExpectations(t)
+}
+
+func TestResetPassword_DeleteCodeError(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	user := &domain.User{
+		ID:    1,
+		Email: "test@test.com",
+	}
+
+	resetCode := &domain.ResetCode{
+		ID:        1,
+		UserID:    1,
+		Code:      "123456",
+		ExpiresAt: time.Now().Add(10 * time.Minute),
+	}
+
+	userRepo.On("FindByEmail", "test@test.com").Return(user, nil)
+	resetRepo.On("FindByUserIDAndCode", int64(1), "123456").Return(resetCode, nil)
+
+	userRepo.On(
+		"UpdatePassword",
+		int64(1),
+		mock.AnythingOfType("string"),
+	).Return(nil)
+
+	resetRepo.On("DeleteByUserID", int64(1)).
+		Return(errors.New("delete error"))
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	err := uc.ResetPassword("test@test.com", "123456", "newpassword")
+
+	assert.Error(t, err)
+	assert.Equal(t, "delete error", err.Error())
+
+	userRepo.AssertExpectations(t)
+	resetRepo.AssertExpectations(t)
+}
+
+func TestRegister_HashPassword(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	userRepo.On("FindByEmail", "hash@test.com").
+		Return(nil, sql.ErrNoRows)
+
+	userRepo.On("Create", mock.AnythingOfType("*domain.User")).
+		Return(nil)
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	user, err := uc.Register("hash@test.com", "mypassword")
+
+	assert.NoError(t, err)
+	assert.NotEqual(t, "mypassword", user.Password)
+
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(user.Password),
+		[]byte("mypassword"),
+	)
+
+	assert.NoError(t, err)
+
+	userRepo.AssertExpectations(t)
+}
+func TestRegister_DefaultRole(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	userRepo.On("FindByEmail", "role@test.com").
+		Return(nil, sql.ErrNoRows)
+
+	userRepo.On("Create", mock.AnythingOfType("*domain.User")).
+		Return(nil)
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	user, err := uc.Register("role@test.com", "password123")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "user", user.Role)
+
+	userRepo.AssertExpectations(t)
+}
+
+func TestLogin_EmptyPasswordHash(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	userRepo.On("FindByEmail", "test@test.com").
+		Return(&domain.User{
+			ID:       1,
+			Email:    "test@test.com",
+			Password: "",
+		}, nil)
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	token, err := uc.Login("test@test.com", "password123")
+
+	assert.Error(t, err)
+	assert.Empty(t, token)
+
+	userRepo.AssertExpectations(t)
+}
+
+func TestResetPassword_FindCodeDBError(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	user := &domain.User{
+		ID:    1,
+		Email: "test@test.com",
+	}
+
+	userRepo.On("FindByEmail", "test@test.com").
+		Return(user, nil)
+
+	resetRepo.On(
+		"FindByUserIDAndCode",
+		int64(1),
+		"123456",
+	).Return(nil, errors.New("db error"))
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	err := uc.ResetPassword(
+		"test@test.com",
+		"123456",
+		"newpassword",
+	)
+
+	assert.Error(t, err)
+	assert.Equal(t, "invalid code", err.Error())
+
+	userRepo.AssertExpectations(t)
+	resetRepo.AssertExpectations(t)
+}
+
+func TestResetPassword_DeleteByUserIDNotCalledOnUpdateError(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	user := &domain.User{
+		ID:    1,
+		Email: "test@test.com",
+	}
+
+	resetCode := &domain.ResetCode{
+		ID:        1,
+		UserID:    1,
+		Code:      "123456",
+		ExpiresAt: time.Now().Add(10 * time.Minute),
+	}
+
+	userRepo.On("FindByEmail", "test@test.com").
+		Return(user, nil)
+
+	resetRepo.On(
+		"FindByUserIDAndCode",
+		int64(1),
+		"123456",
+	).Return(resetCode, nil)
+
+	userRepo.On(
+		"UpdatePassword",
+		int64(1),
+		mock.AnythingOfType("string"),
+	).Return(errors.New("update failed"))
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	err := uc.ResetPassword(
+		"test@test.com",
+		"123456",
+		"newpassword",
+	)
+
+	assert.Error(t, err)
+
+	resetRepo.AssertNotCalled(t, "DeleteByUserID", mock.Anything)
+
+	userRepo.AssertExpectations(t)
+	resetRepo.AssertExpectations(t)
+}
+func TestRegister_CreateCalled(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	userRepo.On("FindByEmail", "create@test.com").
+		Return(nil, sql.ErrNoRows)
+
+	userRepo.On(
+		"Create",
+		mock.MatchedBy(func(u *domain.User) bool {
+			return u.Email == "create@test.com" &&
+				u.Password != ""
+		}),
+	).Return(nil)
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	user, err := uc.Register("create@test.com", "password123")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+
+	userRepo.AssertExpectations(t)
+}
+
+func TestLogin_ReturnsJWT(t *testing.T) {
+	userRepo := new(usecase.MockUserRepository)
+	resetRepo := new(usecase.MockResetCodeRepository)
+
+	hashed := hashPassword("password123")
+
+	userRepo.On("FindByEmail", "jwt@test.com").
+		Return(&domain.User{
+			ID:       99,
+			Email:    "jwt@test.com",
+			Password: hashed,
+			Role:     "admin",
+		}, nil)
+
+	uc := usecase.NewAuthUsecase(userRepo, resetRepo, newTestConfig())
+
+	token, err := uc.Login("jwt@test.com", "password123")
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, token)
+	assert.Contains(t, token, ".")
+
+	userRepo.AssertExpectations(t)
+}
